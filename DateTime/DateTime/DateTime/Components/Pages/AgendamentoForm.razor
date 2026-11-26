@@ -1,0 +1,111 @@
+@page "/agendamentos/novo"
+@page "/agendamentos/editar/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using DateTime.Data
+@using DateTime.Models
+@inject IDbContextFactory<AppDbContext> Factory
+@inject NavigationManager Nav
+
+<h3>@(Id == null ? "Novo Agendamento" : "Editar Agendamento")</h3>
+
+@if (carregando)
+{
+    <p><em>Carregando dados...</em></p>
+}
+else
+{
+    <EditForm Model="agendamento" OnValidSubmit="Salvar">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label class="form-label">Data e Hora</label>
+            <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="agendamento.DataHora" />
+            <ValidationMessage For="() => agendamento.DataHora" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Serviço</label>
+            <InputText class="form-control" @bind-Value="agendamento.Servico" placeholder="Ex: Consulta, Corte, etc." />
+            <ValidationMessage For="() => agendamento.Servico" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <InputSelect class="form-select" @bind-Value="agendamento.ClienteId">
+                <option value="0">-- Selecione um cliente --</option>
+                @foreach (var c in clientes)
+                {
+                    <option value="@c.Id">@c.Nome (@c.Telefone)</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => agendamento.ClienteId" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Profissional</label>
+            <InputSelect class="form-select" @bind-Value="agendamento.ProfissionalId">
+                <option value="0">-- Selecione um profissional --</option>
+                @foreach (var p in profissionais)
+                {
+                    <option value="@p.Id">@p.Nome - @p.Especialidade</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => agendamento.ProfissionalId" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <InputSelect class="form-select" @bind-Value="agendamento.Status">
+                <option value="Agendado">Agendado</option>
+                <option value="Em Andamento">Em Andamento</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Cancelado">Cancelado</option>
+            </InputSelect>
+            <ValidationMessage For="() => agendamento.Status" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a class="btn btn-secondary" href="/agendamentos">Voltar</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    Agendamento agendamento = new();
+    List<Cliente> clientes = new();
+    List<Profissional> profissionais = new();
+    bool carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = await Factory.CreateDbContextAsync();
+        clientes = await db.Clientes.OrderBy(c => c.Nome).ToListAsync();
+        profissionais = await db.Profissionais.OrderBy(p => p.Nome).ToListAsync();
+
+        if (Id.HasValue)
+        {
+            var existing = await db.Agendamentos.FindAsync(Id.Value);
+            if (existing != null)
+            {
+                agendamento = existing;
+            }
+        }
+
+        carregando = false;
+    }
+
+    async Task Salvar()
+    {
+        using var db = await Factory.CreateDbContextAsync();
+        if (Id == null)
+        {
+            db.Agendamentos.Add(agendamento);
+        }
+        else
+        {
+            db.Agendamentos.Update(agendamento);
+        }
+        await db.SaveChangesAsync();
+        Nav.NavigateTo("/agendamentos");
+    }
+}

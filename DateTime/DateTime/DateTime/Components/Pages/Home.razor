@@ -1,7 +1,58 @@
-﻿@page "/"
+@page "/"
+@using Microsoft.EntityFrameworkCore
+@using DateTime.Data
+@using DateTime.Models
+@inject IDbContextFactory<AppDbContext> Factory
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Painel Principal - DateTime</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container py-3">
+    <div class="p-4 mb-4 bg-light rounded-3 border">
+        <h1 class="display-6 fw-bold">Sistema de Agendamentos - DateTime</h1>
+        <p class="fs-6 text-muted">Bem-vindo ao sistema de gerenciamento de horários, profissionais e clientes.</p>
+    </div>
 
-Welcome to your new app.
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary"><i class="bi bi-person-badge"></i> Profissionais</h5>
+                    <p class="display-5 fw-bold my-2">@totalProfissionais</p>
+                    <a href="/profissionais" class="btn btn-outline-primary btn-sm">Gerenciar Profissionais</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success"><i class="bi bi-people"></i> Clientes</h5>
+                    <p class="display-5 fw-bold my-2">@totalClientes</p>
+                    <a href="/clientes" class="btn btn-outline-success btn-sm">Gerenciar Clientes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info"><i class="bi bi-calendar-check"></i> Agendamentos</h5>
+                    <p class="display-5 fw-bold my-2">@totalAgendamentos</p>
+                    <a href="/agendamentos" class="btn btn-outline-info btn-sm">Gerenciar Agendamentos</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    int totalProfissionais;
+    int totalClientes;
+    int totalAgendamentos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = await Factory.CreateDbContextAsync();
+        totalProfissionais = await db.Profissionais.CountAsync();
+        totalClientes = await db.Clientes.CountAsync();
+        totalAgendamentos = await db.Agendamentos.CountAsync();
+    }
+}

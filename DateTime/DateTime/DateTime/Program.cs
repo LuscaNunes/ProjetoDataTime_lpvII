@@ -1,4 +1,6 @@
 using DateTime.Components;
+using DateTime.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,7 +8,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+var cs = builder.Configuration.GetConnectionString("Padrao");
+builder.Services.AddDbContextFactory<AppDbContext>(opt =>
+    opt.UseMySql(cs, new MySqlServerVersion(new Version(8, 0, 0))));
+
 var app = builder.Build();
+
+// Garantir que o banco de dados e as migrations sejam aplicados na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -16,7 +30,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();

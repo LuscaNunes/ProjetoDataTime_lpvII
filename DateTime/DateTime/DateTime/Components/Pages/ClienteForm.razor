@@ -1,0 +1,57 @@
+@page "/clientes/novo"
+@page "/clientes/editar/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using DateTime.Data
+@using DateTime.Models
+@inject IDbContextFactory<AppDbContext> Factory
+@inject NavigationManager Nav
+
+<h3>@(Id == null ? "Novo cliente" : "Editar cliente")</h3>
+
+<EditForm Model="cliente" OnValidSubmit="Salvar">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <InputText class="form-control" @bind-Value="cliente.Nome" />
+        <ValidationMessage For="() => cliente.Nome" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Telefone</label>
+        <InputText class="form-control" @bind-Value="cliente.Telefone" />
+        <ValidationMessage For="() => cliente.Telefone" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">E-mail</label>
+        <InputText class="form-control" @bind-Value="cliente.Email" />
+        <ValidationMessage For="() => cliente.Email" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a class="btn btn-secondary" href="/clientes">Voltar</a>
+</EditForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    Cliente cliente = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            using var db = await Factory.CreateDbContextAsync();
+            cliente = await db.Clientes.FindAsync(Id.Value) ?? new();
+        }
+    }
+
+    async Task Salvar()
+    {
+        using var db = await Factory.CreateDbContextAsync();
+        if (Id == null) db.Clientes.Add(cliente);
+        else db.Clientes.Update(cliente);
+        await db.SaveChangesAsync();
+        Nav.NavigateTo("/clientes");
+    }
+}

@@ -1,0 +1,61 @@
+@page "/profissionais/novo"
+@page "/profissionais/editar/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using DateTime.Data
+@using DateTime.Models
+@inject IDbContextFactory<AppDbContext> Factory
+@inject NavigationManager Nav
+
+<h3>@(Id == null ? "Novo Profissional" : "Editar Profissional")</h3>
+
+<EditForm Model="profissional" OnValidSubmit="Salvar">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <InputText class="form-control" @bind-Value="profissional.Nome" />
+        <ValidationMessage For="() => profissional.Nome" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Especialidade</label>
+        <InputText class="form-control" @bind-Value="profissional.Especialidade" />
+        <ValidationMessage For="() => profissional.Especialidade" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a class="btn btn-secondary" href="/profissionais">Voltar</a>
+</EditForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    Profissional profissional = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            using var db = await Factory.CreateDbContextAsync();
+            var existing = await db.Profissionais.FindAsync(Id.Value);
+            if (existing != null)
+            {
+                profissional = existing;
+            }
+        }
+    }
+
+    async Task Salvar()
+    {
+        using var db = await Factory.CreateDbContextAsync();
+        if (Id == null)
+        {
+            db.Profissionais.Add(profissional);
+        }
+        else
+        {
+            db.Profissionais.Update(profissional);
+        }
+        await db.SaveChangesAsync();
+        Nav.NavigateTo("/profissionais");
+    }
+}
